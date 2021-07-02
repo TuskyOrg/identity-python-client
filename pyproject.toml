@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "user_client"
-version = "0.0.1"
+name = "identity_client"
+version = "0.0.2"
 description = ""
 authors = ["Snapper <LearningWithSnapper@gmail.com>"]
 license = "MIT"
@@ -9,7 +9,7 @@ license = "MIT"
 python = "^3.6.2"
 httpx = "^0.18.2"
 pydantic = {version = "^1.8.2", extras=["email"], optional = true}
-snowflake = {git = "https://github.com/TuskyOrg/snowflake-python-client.git", optional = true}
+tusky-snowflake = {git = "https://github.com/TuskyOrg/snowflake-python-client.git", optional = true}
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"
@@ -17,7 +17,7 @@ black = "^21.6b0"
 mypy = "^0.910"
 
 [tool.poetry.extras]
-typing = ["pydantic", "snowflake"]
+typing = ["pydantic", "tusky-snowflake"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

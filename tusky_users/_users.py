@@ -31,7 +31,7 @@ try:
 except ImportError:
     EmailStr = str
 try:
-    from snowflake import Snowflake
+    from tusky_snowflake import Snowflake
 except ImportError:
     Snowflake = int
 
