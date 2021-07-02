@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "user_client"
+version = "0.0.1"
+description = ""
+authors = ["Snapper <LearningWithSnapper@gmail.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.6.2"
+httpx = "^0.18.2"
+pydantic = {version = "^1.8.2", extras=["email"], optional = true}
+snowflake = {git = "https://github.com/TuskyOrg/snowflake-python-client.git", optional = true}
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.4"
+black = "^21.6b0"
+mypy = "^0.910"
+
+[tool.poetry.extras]
+typing = ["pydantic", "snowflake"]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
