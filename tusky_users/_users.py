@@ -3,7 +3,6 @@ import httpx
 ########################################################################################
 # Typing
 ########################################################################################
-
 from typing import (
     Type,
     Union,
@@ -33,11 +32,11 @@ HeaderTypes = Union[
     Sequence[Tuple[bytes, bytes]],
 ]
 
-# fmt: off
 ############################################################
 # Extra, optional types and aliases
 # (Available when installed with "--extras typing")
 from dataclasses import dataclass
+
 HttpUrl = str
 EmailStr = str
 Snowflake = int
@@ -50,8 +49,10 @@ except ImportError:
 try:
     # Check if pydantic[email] works
     from pydantic import EmailStr as _EmailStr
+
     _EmailStr().validate("example@tusky.org")
     from pydantic import EmailStr
+
     del _EmailStr
 except ImportError:
     pass
@@ -64,7 +65,9 @@ except ImportError:
 ############################################################
 # Typing Generics
 class _Kwargs(Protocol):
-    def __init__(self, **kwargs): pass
+    def __init__(self, **kwargs):
+        pass
+
 
 # The type annotation for @classmethod and context managers here follows PEP 484
 # https://www.python.org/dev/peps/pep-0484/#annotating-instance-and-class-methods
@@ -76,13 +79,16 @@ U = TypeVar("U", bound="BaseClient")
 
 ############################################################
 # We need to differentiate between items that are not set and items that are set to None
-class NotSet(Any): pass
+class NotSet:
+    pass
+
+
+not_set: Type[Any]
 not_set = NotSet()
 
 
 ############################################################
 # Other API Responses
-
 @dataclass
 class User:
     id: Snowflake
@@ -105,8 +111,6 @@ class LoginResponse:
 ########################################################################################
 # Helper functions
 ########################################################################################
-# fmt: on
-
 def create_body(*pairs: Tuple[Any, Any]) -> Dict:
     return {k: v for k, v in pairs if type(v) is not NotSet}
 
@@ -119,7 +123,6 @@ def jwt_to_auth_headers(jwt: JWT) -> Dict[str, str]:
 ########################################################################################
 # Clients & end-user API
 ########################################################################################
-
 class BaseClient:
     _client_type: ClientType
     _BASE_URL = "http://localhost:8000"
