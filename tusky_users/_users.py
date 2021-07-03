@@ -1,83 +1,89 @@
+import httpx
+
+########################################################################################
+# Typing
+########################################################################################
+
 from typing import (
     Type,
     Union,
     TypeVar,
     Iterable,
     AsyncIterable,
-    Mapping,
     Any,
     Coroutine,
     Dict,
     Sequence,
     Tuple,
+    MutableMapping,
+    Protocol,
 )
 
-import httpx
-
-try:
-    from pydantic import (
-        SecretStr,
-        HttpUrl,
-        EmailStr,
-        dataclasses,
-    )
-except ImportError:
-    SecretStr = str
-    HttpUrl = str
-    import dataclasses
-# Check if pydantic[email] works
-try:
-    EmailStr().validate("example@tusky.org")
-except ImportError:
-    EmailStr = str
-try:
-    from tusky_snowflake import Snowflake
-except ImportError:
-    Snowflake = int
-
-
-T = TypeVar("T")
-# The type annotation for @classmethod and context managers here follows PEP 484
-# https://www.python.org/dev/peps/pep-0484/#annotating-instance-and-class-methods
-U = TypeVar("U", bound="BaseClient")
-# An aside: I recently realized the letter "U" is used for TypeVars
-# because it comes after "T" in the alphabet :P
-
-
-class NotSet:
-    # Todo: make borg-singleton
-    pass
-
-
-not_set = NotSet()
-
-
-def create_body(*pairs: Tuple[Any, Any]) -> Dict:
-    return {k: v for k, v in pairs if type(v) is not NotSet}
-
-
-# Helper function for JWTs
-def jwt_to_auth_headers(jwt: "JWT") -> Dict[str, str]:
-    return {"Authorization": f"Bearer {jwt}"}
-
-
-ClientType = Union[Type[httpx.Client], Type[httpx.AsyncClient]]
+JWT = str
+ClientType = Union[Type[httpx.Client], httpx.AsyncClient]
 # https://github.com/encode/httpx/blob/ab64f7c41fc0fbe638dd586fecf0689c847109bb/httpx/_types.py
 RequestContent = Union[str, bytes, Iterable[bytes], AsyncIterable[bytes]]
 ResponseContent = Union[str, bytes, Iterable[bytes], AsyncIterable[bytes]]
 RequestData = dict
 HeaderTypes = Union[
-    "Headers",
+    MutableMapping[str, str],
     Dict[str, str],
     Dict[bytes, bytes],
     Sequence[Tuple[str, str]],
     Sequence[Tuple[bytes, bytes]],
 ]
 
-JWT = str
+# fmt: off
+############################################################
+# Extra, optional types and aliases
+# (Available when installed with "--extras typing")
+from dataclasses import dataclass
+HttpUrl = str
+EmailStr = str
+Snowflake = int
+SecretStr = str
+try:
+    from pydantic import HttpUrl
+    from pydantic.dataclasses import dataclass  # type: ignore
+except ImportError:
+    pass
+try:
+    # Check if pydantic[email] works
+    from pydantic import EmailStr as _EmailStr
+    _EmailStr().validate("example@tusky.org")
+    from pydantic import EmailStr
+    del _EmailStr
+except ImportError:
+    pass
+try:
+    from tusky_snowflake import Snowflake
+except ImportError:
+    pass
 
 
-@dataclasses.dataclass
+############################################################
+# Typing Generics
+class _Kwargs(Protocol):
+    def __init__(self, **kwargs): pass
+
+# The type annotation for @classmethod and context managers here follows PEP 484
+# https://www.python.org/dev/peps/pep-0484/#annotating-instance-and-class-methods
+# An aside: I recently realized the letter "U" is used for TypeVars
+# because it comes after "T" in the alphabet :P
+T = TypeVar("T", bound=_Kwargs)
+U = TypeVar("U", bound="BaseClient")
+
+
+############################################################
+# We need to differentiate between items that are not set and items that are set to None
+class NotSet(Any): pass
+not_set = NotSet()
+
+
+############################################################
+# Other API Responses
+
+@dataclass
 class User:
     id: Snowflake
     username: str
@@ -87,14 +93,32 @@ class User:
     is_verified: bool
 
 
-@dataclasses.dataclass
+@dataclass
 class LoginResponse:
     access_token: JWT
     token_type: str
 
-    # def __str__(self):
-    #     return
+    def __str__(self):
+        return
 
+
+########################################################################################
+# Helper functions
+########################################################################################
+# fmt: on
+
+def create_body(*pairs: Tuple[Any, Any]) -> Dict:
+    return {k: v for k, v in pairs if type(v) is not NotSet}
+
+
+# Helper function for JWTs
+def jwt_to_auth_headers(jwt: JWT) -> Dict[str, str]:
+    return {"Authorization": f"Bearer {jwt}"}
+
+
+########################################################################################
+# Clients & end-user API
+########################################################################################
 
 class BaseClient:
     _client_type: ClientType
@@ -139,7 +163,8 @@ class Client(BaseClient):
             url=self._BASE_URL + url,
             content=content,
             data=data,
-            headers=headers ** kwargs,
+            headers=headers,
+            **kwargs,
         )
         response.raise_for_status()
         return return_type(**response.json())
@@ -290,6 +315,16 @@ class AsyncClient(BaseClient):
         return await self._request(
             "patch", "/users/me", return_type=User, headers=auth_headers, json=body
         )
+
+    async def aclose(self) -> None:
+        await self._client.aclose()
+
+    async def __aenter__(self: U) -> U:
+        await self._client.__aenter__()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        await self._client.__aexit__(exc_type, exc_val, exc_tb)
 
 
 async def register(
