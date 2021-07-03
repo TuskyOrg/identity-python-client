@@ -16,6 +16,7 @@ from typing import (
     Tuple,
     MutableMapping,
     Protocol,
+    Literal,
 )
 
 JWT = str
@@ -100,12 +101,13 @@ class User:
 
 
 @dataclass
-class LoginResponse:
+class BearerToken:
     access_token: JWT
-    token_type: str
+    token_type: Literal["bearer"]
 
     def __str__(self):
-        return
+        return '{"access_token": %s, "token_type": bearer}' % self.access_token
+
 
 
 ########################################################################################
@@ -201,11 +203,11 @@ class Client(BaseClient):
         self,
         username: str,
         password: SecretStr,
-    ) -> LoginResponse:
+    ) -> BearerToken:
         return self._request(
             "post",
             "/auth/jwt/login",
-            return_type=LoginResponse,
+            return_type=BearerToken,
             data=({"username": username, "password": password}),
         )
 
@@ -289,7 +291,7 @@ class AsyncClient(BaseClient):
         return await self._request(
             "post",
             "/auth/jwt/login",
-            return_type=LoginResponse,
+            return_type=BearerToken,
             data=({"username": username, "password": password}),
         )
 
