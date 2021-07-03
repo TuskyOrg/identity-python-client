@@ -106,7 +106,16 @@ class BearerToken:
     token_type: Literal["bearer"]
 
     def __str__(self):
-        return '{"access_token": %s, "token_type": bearer}' % self.access_token
+        return '{"access_token": "%s", "token_type": "bearer"}' % self.access_token
+
+    # To implement the Mapping protocol, this class has the methods "keys" "__getitem__"
+    # This means dict(bearer_token) will work.
+    # Consequently, fastapi.encoders.jsonable_encoder will also work.
+    def keys(self):
+        return ["access_token", "token_type"]
+
+    def __getitem__(self, key):
+        return {"access_token": self.access_token, "token_type": "bearer"}[key]
 
 
 
