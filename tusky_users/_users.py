@@ -125,7 +125,7 @@ def jwt_to_auth_headers(jwt: JWT) -> Dict[str, str]:
 ########################################################################################
 class BaseClient:
     _client_type: ClientType
-    _BASE_URL = "http://localhost:8000"
+    _BASE_URL = "http://localhost:8007"
 
     def __init__(self):
         self._client = self._client_type()
