@@ -17,6 +17,7 @@ from typing import (
     MutableMapping,
     Protocol,
     Literal,
+    Optional,
 )
 
 JWT = str
@@ -94,7 +95,7 @@ not_set = NotSet()
 class User:
     id: Snowflake
     username: str
-    email: EmailStr
+    email: Optional[EmailStr]
     is_active: bool
     is_superuser: bool
     is_verified: bool
@@ -118,17 +119,19 @@ class BearerToken:
         return {"access_token": self.access_token, "token_type": "bearer"}[key]
 
 
-
 ########################################################################################
 # Helper functions
 ########################################################################################
 def create_body(*pairs: Tuple[Any, Any]) -> Dict:
+    """Create body message without unset fields"""
     return {k: v for k, v in pairs if type(v) is not NotSet}
 
 
-# Helper function for JWTs
 def jwt_to_auth_headers(jwt: JWT) -> Dict[str, str]:
     return {"Authorization": f"Bearer {jwt}"}
+
+
+# Todo: Add documentation and documentation wrapper
 
 
 ########################################################################################
@@ -186,8 +189,8 @@ class Client(BaseClient):
     def register(
         self,
         username: str,
-        email: EmailStr,
         password: SecretStr,
+        email: EmailStr = not_set,
         grant_type: str = not_set,
         scope: str = not_set,
         client_secret: SecretStr = not_set,
@@ -225,7 +228,7 @@ class Client(BaseClient):
             "post", "/auth/verify", return_type=User, json=({"token": token})
         )
 
-    def get_me(self, token: JWT):
+    def get_me(self, token: JWT) -> User:
         auth_headers = jwt_to_auth_headers(token)
         return self._request("get", "/users/me", return_type=User, headers=auth_headers)
 
@@ -246,7 +249,7 @@ class Client(BaseClient):
 
 
 class AsyncClient(BaseClient):
-    _client_type: httpx.AsyncClient
+    _client_type = httpx.AsyncClient
 
     async def _request(
         self,
@@ -271,8 +274,8 @@ class AsyncClient(BaseClient):
     async def register(
         self,
         username: str,
-        email: EmailStr,
         password: SecretStr,
+        email: EmailStr = not_set,
         grant_type: str = not_set,
         scope: str = not_set,
         client_secret: SecretStr = not_set,
@@ -343,8 +346,8 @@ class AsyncClient(BaseClient):
 
 async def register(
     username: str,
-    email: EmailStr,
     password: SecretStr,
+    email: EmailStr = not_set,
     grant_type: str = not_set,
     scope: str = not_set,
     client_secret: SecretStr = not_set,
