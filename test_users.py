@@ -1,6 +1,10 @@
+import warnings
+
 import pytest
 
 from tusky_users import _users
+
+warnings.warn("THIS IS NOT A COMPREHENSIVE TEST SUITE, to say the least")
 
 
 def test_bearer():
