@@ -21,7 +21,7 @@ from typing import (
 )
 
 JWT = str
-ClientType = Union[Type[httpx.Client], httpx.AsyncClient]
+ClientType = Union[Type[httpx.Client], Type[httpx.AsyncClient]]
 # https://github.com/encode/httpx/blob/ab64f7c41fc0fbe638dd586fecf0689c847109bb/httpx/_types.py
 RequestContent = Union[str, bytes, Iterable[bytes], AsyncIterable[bytes]]
 ResponseContent = Union[str, bytes, Iterable[bytes], AsyncIterable[bytes]]
@@ -85,7 +85,7 @@ class NotSet:
     pass
 
 
-not_set: Type[Any]
+not_set: Any
 not_set = NotSet()
 
 
@@ -117,6 +117,9 @@ class BearerToken:
 
     def __getitem__(self, key):
         return {"access_token": self.access_token, "token_type": "bearer"}[key]
+
+    def __iter__(self):
+        raise NotImplementedError
 
 
 ########################################################################################
