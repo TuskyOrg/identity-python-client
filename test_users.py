@@ -11,3 +11,6 @@ def test_bearer():
     t = _users.BearerToken(access_token="abc", token_type="bearer")
     assert dict(t) == {"access_token": "abc", "token_type": "bearer"}
     assert str(t) == '{"access_token": "abc", "token_type": "bearer"}'
+    with pytest.raises(NotImplementedError):
+        for _ in t:
+            pass
