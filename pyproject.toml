@@ -1,9 +1,9 @@
 [tool.poetry]
 name = "tusky_users"
-version = "0.0.6"
+version = "0.0.7"
 description = ""
 authors = ["Snapper <LearningWithSnapper@gmail.com>"]
-license = "MIT"
+license = "GPL v3"
 
 [tool.poetry.dependencies]
 python = "^3.6.2"
