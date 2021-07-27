@@ -101,17 +101,44 @@ class User:
     is_verified: bool
 
 
+# To implement the Mapping protocol, this class has the methods "keys" & "__getitem__"
+# This means dict(LoginResponse) will work.
+# Consequently, fastapi.encoders.jsonable_encoder will also work.
 @dataclass
-class BearerToken:
+class LoginResponse:
+    access_token: JWT
+    refresh_token: JWT
+    token_type: Literal["bearer"]
+
+    def __str__(self):
+        return (
+            '{"access_token": "%s", "refresh_token": %s, "token_type": "bearer"}'
+            % self.access_token,
+            self.refresh_token,
+        )
+
+    def keys(self):
+        return ["access_token", "refresh_token", "token_type"]
+
+    def __getitem__(self, key):
+        return {
+            "access_token": self.access_token,
+            "refresh_token": self.refresh_token,
+            "token_type": "bearer",
+        }[key]
+
+    def __iter__(self):
+        raise NotImplementedError
+
+
+@dataclass
+class RefreshResponse:
     access_token: JWT
     token_type: Literal["bearer"]
 
     def __str__(self):
         return '{"access_token": "%s", "token_type": "bearer"}' % self.access_token
 
-    # To implement the Mapping protocol, this class has the methods "keys" "__getitem__"
-    # This means dict(bearer_token) will work.
-    # Consequently, fastapi.encoders.jsonable_encoder will also work.
     def keys(self):
         return ["access_token", "token_type"]
 
@@ -218,17 +245,35 @@ class Client(BaseClient):
         self,
         username: str,
         password: SecretStr,
-    ) -> BearerToken:
+    ) -> LoginResponse:
         return self._request(
             "post",
             "/auth/jwt/login",
-            return_type=BearerToken,
+            return_type=LoginResponse,
             data=({"username": username, "password": password}),
+        )
+
+    def refresh(
+        self,
+        client_id: Union[int, str],
+        refresh_token: JWT,
+        scope: str = not_set,  # Todo Union[str, List[str]]
+        client_secret: str = not_set,
+    ) -> RefreshResponse:
+        body = create_body(
+            ("grant_type", "refresh_token"),
+            ("client_id", str(client_id)),
+            ("refresh_token", refresh_token),
+            ("scope", scope),
+            ("client_secret", client_secret),
+        )
+        return self._request(
+            "post", "/auth/jwt/refresh", return_type=RefreshResponse, json=body
         )
 
     def verify(self, token: JWT) -> User:
         return self._request(
-            "post", "/auth/verify", return_type=User, json=({"token": token})
+            "post", "/auth/verify", return_type=User, json={"token": token}
         )
 
     def get_me(self, token: JWT) -> User:
@@ -306,8 +351,26 @@ class AsyncClient(BaseClient):
         return await self._request(
             "post",
             "/auth/jwt/login",
-            return_type=BearerToken,
+            return_type=LoginResponse,
             data=({"username": username, "password": password}),
+        )
+
+    async def refresh(
+        self,
+        client_id: Union[int, str],
+        refresh_token: JWT,
+        scope: str = not_set,  # Todo Union[str, List[str]]
+        client_secret: str = not_set,
+    ) -> Coroutine:
+        body = create_body(
+            ("grant_type", "refresh_token"),
+            ("client_id", str(client_id)),
+            ("refresh_token", refresh_token),
+            ("scope", scope),
+            ("client_secret", client_secret),
+        )
+        return await self._request(
+            "post", "/auth/jwt/refresh", return_type=RefreshResponse, json=body
         )
 
     async def verify(self, token: JWT) -> Coroutine:
@@ -369,6 +432,16 @@ async def register(
 async def login(username: str, password: SecretStr):
     async with AsyncClient() as c:
         return await c.login(username, password)
+
+
+async def refresh(
+    client_id: Union[int, str],
+    refresh_token: JWT,
+    scope: str = not_set,
+    client_secret: str = not_set,
+):
+    async with AsyncClient() as c:
+        return await c.refresh(client_id, refresh_token, scope, client_secret)
 
 
 async def verify(token: JWT):
