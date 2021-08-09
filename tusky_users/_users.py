@@ -92,6 +92,11 @@ not_set = NotSet()
 ############################################################
 # Other API Responses
 @dataclass
+class EmptyResponse:
+    pass
+
+
+@dataclass
 class User:
     id: Snowflake
     username: str
@@ -271,6 +276,11 @@ class Client(BaseClient):
             "post", "/auth/jwt/refresh", return_type=RefreshResponse, json=body
         )
 
+    def revoke(self, client_id: Union[int, str], token: str) -> str:
+        return self._request(
+            "post", "/auth/jwt/revoke", return_type=EmptyResponse, json={"client_id": str(client_id), "token": token}
+        )
+
     def verify(self, token: JWT) -> User:
         return self._request(
             "post", "/auth/verify", return_type=User, json={"token": token}
@@ -373,6 +383,11 @@ class AsyncClient(BaseClient):
             "post", "/auth/jwt/refresh", return_type=RefreshResponse, json=body
         )
 
+    async def revoke(self, client_id: Union[int, str], token: str) -> Coroutine:
+        return self._request(
+            "post", "/auth/jwt/revoke", return_type=EmptyResponse, json={"client_id": str(client_id), "token": token}
+        )
+
     async def verify(self, token: JWT) -> Coroutine:
         return await self._request(
             "post", "/auth/verify", return_type=User, json=({"token": token})
@@ -442,6 +457,11 @@ async def refresh(
 ):
     async with AsyncClient() as c:
         return await c.refresh(client_id, refresh_token, scope, client_secret)
+
+
+async def revoke(client_id: Union[int, str], token: str):
+    with AsyncClient() as c:
+        return await c.revoke(client_id, token)
 
 
 async def verify(token: JWT):

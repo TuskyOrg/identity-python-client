@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "tusky_users"
-version = "0.0.7"
+version = "0.0.8"
 description = ""
 authors = ["Snapper <LearningWithSnapper@gmail.com>"]
 license = "GPL v3"
